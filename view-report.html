@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>รายงานการทำความสะอาด</title>
+  <link rel="stylesheet" href="style.css" />
+
+
+  <style>
+    body { background:#f4f7fb; font-family:sans-serif; }
+
+    .wrap { max-width:900px; margin:20px auto; padding:0 14px; }
+
+    .controls {
+      display:flex;
+      gap:8px;
+      margin-bottom:16px;
+      flex-wrap:wrap;
+    }
+    #q {
+      flex:1;
+      padding:6px 10px;
+      border-radius:6px;
+      border:1px solid #ccc;
+    }
+
+    /* สีแผนก */
+    .dept-blending { border-left:6px solid #fb923c; background:#ffedd5; }
+    .dept-packing  { border-left:6px solid #38bdf8; background:#e0f2fe; }
+    .dept-intake   { border-left:6px solid #22c55e; background:#dcfce7; }
+
+    .date-block { margin-bottom:30px; }
+    .date-title { font-size:22px; font-weight:bold; margin-bottom:12px; }
+
+    .dept-box {
+      padding:12px; border-radius:8px; margin-bottom:10px;
+      cursor:pointer;
+    }
+    .dept-header { font-size:18px; font-weight:bold; }
+
+    .task-list { margin-top:8px; display:none; }
+
+    .task-card {
+      background:white; padding:12px;
+      border-radius:8px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.07);
+      margin-bottom:10px;
+      cursor:pointer;
+    }
+
+    .task-body { display:none; margin-top:10px; }
+
+    /* ตาราง Spec แบบ 2 คอลัมน์ */
+    .spec-table {
+      width:100%;
+      border-collapse:collapse;
+      margin-bottom:10px;
+    }
+    .spec-table td {
+      padding:6px 4px;
+      border-bottom:1px solid #e5e7eb;
+    }
+    .spec-label { font-weight:bold; width:40%; }
+
+    .photos {
+      display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;
+    }
+    .photos img {
+      width:180px; height:120px; object-fit:cover;
+      border-radius:6px; cursor:pointer;
+      box-shadow:0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    /* ปุ่มขึ้นบนสุด */
+    #topBtn {
+      position:fixed; bottom:20px; right:20px;
+      background:#0d2b52; color:white;
+      padding:10px 14px; border-radius:50%;
+      font-size:18px; cursor:pointer;
+      box-shadow:0 4px 10px rgba(0,0,0,0.2);
+      display:none;
+    }
+  </style>
+</head>
+
+<body>
+<script>
+  // Navbar มือถือ (ใช้ได้ทุกหน้า)
+  document.addEventListener("DOMContentLoaded", function () {
+    const toggle = document.getElementById("menuToggle");
+    const menu = document.getElementById("mobileMenu");
+
+    if (!toggle || !menu) return;
+
+    toggle.addEventListener("click", function () {
+      menu.classList.toggle("show");
+    });
+
+    // กันกรณีคลิก link แล้วเมนูไม่หุบ (ในมือถือ)
+    menu.querySelectorAll("a").forEach(a => {
+      a.addEventListener("click", () => {
+        menu.classList.remove("show");
+      });
+    });
+  });
+</script>
+
+  <!-- NAV หลัก -->
+   
+  <header class="topbar">
+  <div class="topbar-left">
+    <span class="brand">PCG • Inspection</span>
+  </div>
+
+  <button id="menuToggle" class="menu-btn">☰</button>
+
+  <nav id="mobileMenu" class="nav-links">
+    <a href="index.html" class="nav-item">หน้าแรก</a>
+    <a href="dashboard_fixed.html" class="nav-item">Dashboard</a>
+    <a href="view-report.html" class="nav-item">View Report</a>
+    <a href="manage-photos.html" class="nav-item">Manage Photos</a>
+  </nav>
+</header>
+
+
+
+  <main class="wrap">
+<div id="reportContainer">
+
+  <div id="reportDate" style="display:none;"></div>
+  <div id="reportDept" style="display:none;"></div>
+  <div id="reportLine" style="display:none;"></div>
+
+  <!-- ส่วนรายงาน -->
+
+ <div class="controls">
+  <button id="btnRefresh" class="btn small">Refresh</button>
+  <input id="q" placeholder="ค้นหา (ชื่อ, แผนก, ไลน์, ประเภท)">
+
+  
+</div>
+
+<div id="reportDept" style="display:none;"></div>
+<div id="reportDate" style="display:none;"></div>
+<div id="reportLine" style="display:none;"></div>
+
+    <div id="content"></div>
+  </div>
+
+</main>
+<!-- ⭐ ปุ่ม Export PDF -->
+  <button id="btnExportPDF" class="floating-pdf-btn" style="background:#0d6efd;color:white;">
+    Export PDF
+  </button>
+
+
+  <div id="topBtn">⬆</div>
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- html2canvas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script type="module" src="view-report.js"></script>
+  <!-- GLOBAL LOADER -->
+<div id="globalLoader" class="loader-overlay">
+  <div class="loader"></div>
+  <div class="loader-text">กำลังโหลด...</div>
+</div>
+<!-- Developer Credit Popup -->
+<div id="devCreditOverlay"
+     style="
+       display:none; position:fixed; inset:0;
+       background:rgba(0,0,0,0.65); backdrop-filter:blur(4px);
+       justify-content:center; align-items:center; z-index:9999;
+     ">
+  <pre id="devAscii"
+       style="color:white; font-size:16px; text-align:center;
+              line-height:1.2; white-space:pre; padding:20px;">
+  </pre>
+</div>
+
+<script>
+// ----------- Settings -------------
+const devAudio = new Audio("sounds/beer_open.mp3");  // เสียงเปิดเบียร์
+let devClickCount = 0;
+let asciiIndex = 0;
+
+// ----------- ASCII Animation Frames -----------
+const asciiFrames = [
+`    /\\_/\\
+   ( ≖‿≖ )
+   (  ~  )
+    \\   /
+     |_|     🍺 ACCESS GRANTED
+DEV BY ARM`,
+
+`    /\\_/\\
+   ( •‿• )
+   (  ~  )
+    \\   /
+     |_|     🍺 ACCESS GRANTED
+DEV BY ARM`
+];
+
+// ----------- Show Popup -----------
+function showDevPopup() {
+  const overlay = document.getElementById("devCreditOverlay");
+  const box = document.getElementById("devAscii");
+
+  // รีเซ็ตเสียงทุกครั้ง
+  devAudio.currentTime = 0;
+  devAudio.play().catch(()=>{});
+
+  overlay.style.display = "flex";
+
+  // กระพริบ frame แมว
+  asciiIndex = 0;
+  const anim = setInterval(()=>{
+     box.textContent = asciiFrames[asciiIndex];
+     asciiIndex = (asciiIndex + 1) % asciiFrames.length;
+  }, 220);
+
+  // ซ่อนหลัง 5 วินาที
+  setTimeout(()=>{
+    clearInterval(anim);
+    overlay.style.display = "none";
+  }, 5000);
+}
+
+// ----------- Trigger เมื่อคลิกชื่อแบรนด์ 3 ครั้ง -----------
+document.querySelector(".brand")?.addEventListener("click", () => {
+  devClickCount++;
+
+  if (devClickCount >= 3) {
+    devClickCount = 0;
+    showDevPopup();
+  }
+});
+</script>
+
+
+
+</body>
+</html>

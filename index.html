@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PCG • Inspection</title>
+  <link id="theme-css" rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="brand">PCG • Inspection</span>
+  </div>
+
+  <!-- ปุ่มมือถือ -->
+  <button id="menuToggle" class="menu-btn">☰</button>
+
+  <!-- เมนู -->
+  <nav id="mobileMenu" class="nav-links">
+    <a href="index.html" class="nav-item">หน้าแรก</a>
+    <a href="dashboard_fixed.html" class="nav-item">Dashboard</a>
+    <a href="view-report.html" class="nav-item">View Report</a>
+    <a href="manage-photos.html" class="nav-item">Manage Photos</a>
+  </nav>
+</header>
+
+
+<main class="wrap">
+
+  <!-- เลือกแผนก -->
+  <section class="card center">
+    <h2>เลือกหน่วยงาน</h2>
+
+    <div class="dept-grid">
+      <button class="dept-btn" data-dept="Blending">Blending</button>
+      <button class="dept-btn" data-dept="Packing">Packing</button>
+      <button class="dept-btn" data-dept="Intake">Intake</button>
+    </div>
+
+    <p class="muted">เลือกแผนกเพื่อเริ่มทำรายงาน</p>
+  </section>
+
+  <!-- FLOW -->
+  <section id="flow" class="card" style="display:none">
+
+    <div class="crumbs">
+      <span id="crumbDept"></span>
+      <button id="backToDept" class="link">เปลี่ยน</button>
+    </div>
+
+    <form id="inspectionForm" class="form">
+
+      <div class="form-row">
+        <label>ชื่อผู้ทำความสะอาด</label>
+        <input id="ownerName" required />
+      </div>
+
+      <div class="form-row">
+        <label>ชื่อหัวหน้า</label>
+        <input id="supervisorName" />
+      </div>
+
+      <div id="dynamicArea"></div>
+      <div id="checkpoints" class="check-list"></div>
+
+      <div class="form-row">
+        <label>วันที่ทำงาน</label>
+        <input id="workDate" type="date" required />
+      </div>
+
+      <div class="form-row">
+        <button id="uploadBtn" type="button" class="btn primary">ส่งรายงาน</button>
+      </div>
+
+      <div id="status" class="muted small"></div>
+    </form>
+  </section>
+
+</main>
+
+<footer class="footer">
+  Made for PCG · Inspection · v1.1
+</footer>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Script หลัก -->
+<script type="module" src="script.js?v=6"></script>
+
+<!-- FIXED MOBILE MENU SCRIPT (ทำงานทุกหน้า) -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const toggle = document.getElementById("menuToggle");
+  const menu = document.getElementById("mobileMenu");
+
+  if (!toggle || !menu) return;
+
+  // toggle เปิด/ปิดเมนู
+  toggle.addEventListener("click", () => {
+    menu.classList.toggle("show");
+  });
+
+  // คลิกลิงก์แล้วก็ปิดเมนู
+  menu.querySelectorAll("a").forEach(a => {
+    a.addEventListener("click", () => {
+      menu.classList.remove("show");
+    });
+  });
+});
+</script>
+
+<!-- Developer Credit Popup -->
+<div id="devCreditOverlay"
+     style="
+       display:none; position:fixed; inset:0;
+       background:rgba(0,0,0,0.65); backdrop-filter:blur(4px);
+       justify-content:center; align-items:center; z-index:9999;
+     ">
+  <pre id="devAscii"
+       style="color:white; font-size:16px; text-align:center;
+              line-height:1.2; white-space:pre; padding:20px;">
+  </pre>
+</div>
+
+<script>
+// ----------- Settings -------------
+const devAudio = new Audio("sounds/beer_open.mp3");  // เสียงเปิดเบียร์
+let devClickCount = 0;
+let asciiIndex = 0;
+
+// ----------- ASCII Animation Frames -----------
+const asciiFrames = [
+`    /\\_/\\
+   ( ≖‿≖ )
+   (  ~  )
+    \\   /
+     |_|     🍺 ACCESS GRANTED
+DEV BY ARM`,
+
+`    /\\_/\\
+   ( •‿• )
+   (  ~  )
+    \\   /
+     |_|     🍺 ACCESS GRANTED
+DEV BY ARM`
+];
+
+// ----------- Show Popup -----------
+function showDevPopup() {
+  const overlay = document.getElementById("devCreditOverlay");
+  const box = document.getElementById("devAscii");
+
+  // รีเซ็ตเสียงทุกครั้ง
+  devAudio.currentTime = 0;
+  devAudio.play().catch(()=>{});
+
+  overlay.style.display = "flex";
+
+  // กระพริบ frame แมว
+  asciiIndex = 0;
+  const anim = setInterval(()=>{
+     box.textContent = asciiFrames[asciiIndex];
+     asciiIndex = (asciiIndex + 1) % asciiFrames.length;
+  }, 220);
+
+  // ซ่อนหลัง 5 วินาที
+  setTimeout(()=>{
+    clearInterval(anim);
+    overlay.style.display = "none";
+  }, 5000);
+}
+
+// ----------- Trigger เมื่อคลิกชื่อแบรนด์ 3 ครั้ง -----------
+document.querySelector(".brand")?.addEventListener("click", () => {
+  devClickCount++;
+
+  if (devClickCount >= 3) {
+    devClickCount = 0;
+    showDevPopup();
+  }
+});
+</script>
+
+
+</body>
+</html>

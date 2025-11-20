@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Manage Photos • Inspection</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    .wrap {
+      max-width:1000px;
+      margin:18px auto;
+      padding:0 16px 20px;
+    }
+
+    .controls {
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin-bottom:10px;
+      flex-wrap:wrap;
+    }
+
+    .controls select,
+    .controls input {
+      padding:6px 8px;
+      border-radius:8px;
+      border:1px solid #e5e7eb;
+      background:#fff;
+      font-size:13px;
+    }
+
+    .controls .btn {
+      font-size:13px;
+    }
+
+    .summary-bar {
+      font-size:13px;
+      color:var(--muted, #6b7280);
+      margin-bottom:10px;
+    }
+
+    .badge {
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:2px 6px;
+      border-radius:999px;
+      font-size:11px;
+      background:#e5e7eb;
+      color:#374151;
+    }
+
+    .badge.old {
+      background:#fee2e2;
+      color:#b91c1c;
+    }
+
+    .gallery {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+    }
+
+    .photo-card {
+      background:#fff;
+      padding:10px;
+      border-radius:10px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.06);
+      display:flex;
+      flex-direction:column;
+      height:100%;
+    }
+
+    .photo-card img {
+      width:100%;
+      height:150px;
+      object-fit:cover;
+      border-radius:6px;
+    }
+
+    .meta {
+      font-size:13px;
+      color:var(--muted, #6b7280);
+      margin-top:6px;
+    }
+
+    .meta strong {
+      color:#111827;
+    }
+
+    .meta.small {
+      font-size:12px;
+    }
+
+    .photo-footer {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-top:6px;
+      gap:6px;
+    }
+
+    .photo-actions {
+      display:flex;
+      gap:6px;
+      justify-content:flex-end;
+      margin-top:6px;
+    }
+
+    .btn.danger {
+      background:crimson;
+      color:#fff;
+      border-color:crimson;
+    }
+
+    .btn.danger:hover {
+      background:#b91c1c;
+      border-color:#b91c1c;
+    }
+
+    .old-photo {
+      border-left:4px solid #b91c1c;
+      padding-left:8px;
+    }
+
+    .muted {
+      color:var(--muted, #6b7280);
+    }
+
+    .small {
+      font-size:13px;
+    }
+
+    .footer {
+      padding:8px 16px;
+      font-size:12px;
+      text-align:center;
+      color:var(--muted, #6b7280);
+      border-top:1px solid #e5e7eb;
+    }
+
+    @media (max-width:640px){
+      .controls {
+        flex-direction:column;
+        align-items:flex-start;
+      }
+    }
+  </style>
+</head>
+<script>
+  // Navbar มือถือ (ใช้ได้ทุกหน้า)
+  document.addEventListener("DOMContentLoaded", function () {
+    const toggle = document.getElementById("menuToggle");
+    const menu = document.getElementById("mobileMenu");
+
+    if (!toggle || !menu) return;
+
+    toggle.addEventListener("click", function () {
+      menu.classList.toggle("show");
+    });
+
+    // กันกรณีคลิก link แล้วเมนูไม่หุบ (ในมือถือ)
+    menu.querySelectorAll("a").forEach(a => {
+      a.addEventListener("click", () => {
+        menu.classList.remove("show");
+      });
+    });
+  });
+</script>
+
+
+
+  <!-- NAV หลัก -->
+ <header class="topbar">
+  <div class="topbar-left">
+    <span class="brand">PCG • Inspection</span>
+  </div>
+
+  <button id="menuToggle" class="menu-btn">☰</button>
+
+  <nav id="mobileMenu" class="nav-links">
+    <a href="index.html" class="nav-item">หน้าแรก</a>
+    <a href="dashboard_fixed.html" class="nav-item">Dashboard</a>
+    <a href="view-report.html" class="nav-item">View Report</a>
+    <a href="manage-photos.html" class="nav-item">Manage Photos</a>
+  </nav>
+</header>
+
+
+
+  <main class="wrap">
+    <h2 style="margin:10px 0 8px;">Manage Photos</h2>
+
+    <section class="card">
+      <div class="controls">
+        <button id="btnRefresh" class="btn small">Refresh</button>
+
+        <select id="filterMonth">
+          <option value="">ทุกเดือน</option>
+        </select>
+
+        <select id="ageFilter">
+          <option value="">อายุทั้งหมด</option>
+          <option value="old">≥ 25 วัน</option>
+          <option value="recent">≤ 30 วัน</option>
+        </select>
+
+        <input id="searchInput" placeholder="ค้นหา (ชื่อ, แผนก, วันที่, คนทำ)" />
+
+        <div style="flex:1"></div>
+
+        <!-- ปุ่มระบบรูปเก่า -->
+        <button id="btnScanOld" class="btn small">ตรวจรูปเกิน 25 วัน</button>
+        <button id="btnExportZip" class="btn small">Export ZIP</button>
+        <button id="btnDeleteOld" class="btn small danger">ลบรูปเก่า</button>
+      </div>
+
+      <!-- แถวสรุป -->
+      <div id="summary" class="summary-bar"></div>
+
+      <div id="gallery" class="gallery"></div>
+      <div id="status" class="muted small" style="margin-top:12px"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    Manage Photos • PCG
+  </footer>
+
+  <!-- JSZip สำหรับสร้างไฟล์ ZIP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- Supabase + logic -->
+  <script type="module" src="manage-photos.js"></script>
+
+  <!-- ZIP Loading Overlay -->
+  <div id="zipOverlay">
+    <div class="zipBox">
+      <div class="loader"></div>
+      <div id="zipText">กำลังสร้างไฟล์ ZIP...</div>
+    </div>
+  </div>
+
+  <style>
+    #zipOverlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .zipBox {
+      background: #fff;
+      padding: 22px 30px;
+      border-radius: 14px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #0d6efd;
+      border-radius: 50%;
+      width: 40px; height: 40px;
+      margin: auto;
+      animation: spin 0.9s linear infinite;
+    }
+
+    #zipText {
+      margin-top: 12px;
+      font-size: 15px;
+      color: #333;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+<!-- Developer Credit Popup -->
+<div id="devCreditOverlay"
+     style="
+       display:none; position:fixed; inset:0;
+       background:rgba(0,0,0,0.65); backdrop-filter:blur(4px);
+       justify-content:center; align-items:center; z-index:9999;
+     ">
+  <pre id="devAscii"
+       style="color:white; font-size:16px; text-align:center;
+              line-height:1.2; white-space:pre; padding:20px;">
+  </pre>
+</div>
+
+<script>
+// ----------- Settings -------------
+const devAudio = new Audio("sounds/beer_open.mp3");  // เสียงเปิดเบียร์
+let devClickCount = 0;
+let asciiIndex = 0;
+
+// ----------- ASCII Animation Frames -----------
+const asciiFrames = [
+`    /\\_/\\
+   ( ≖‿≖ )
+   (  ~  )
+    \\   /
+     |_|     🍺 ACCESS GRANTED
+DEV BY ARM`,
+
+`    /\\_/\\
+   ( •‿• )
+   (  ~  )
+    \\   /
+     |_|     🍺 ACCESS GRANTED
+DEV BY ARM`
+];
+
+// ----------- Show Popup -----------
+function showDevPopup() {
+  const overlay = document.getElementById("devCreditOverlay");
+  const box = document.getElementById("devAscii");
+
+  // รีเซ็ตเสียงทุกครั้ง
+  devAudio.currentTime = 0;
+  devAudio.play().catch(()=>{});
+
+  overlay.style.display = "flex";
+
+  // กระพริบ frame แมว
+  asciiIndex = 0;
+  const anim = setInterval(()=>{
+     box.textContent = asciiFrames[asciiIndex];
+     asciiIndex = (asciiIndex + 1) % asciiFrames.length;
+  }, 220);
+
+  // ซ่อนหลัง 5 วินาที
+  setTimeout(()=>{
+    clearInterval(anim);
+    overlay.style.display = "none";
+  }, 5000);
+}
+
+// ----------- Trigger เมื่อคลิกชื่อแบรนด์ 3 ครั้ง -----------
+document.querySelector(".brand")?.addEventListener("click", () => {
+  devClickCount++;
+
+  if (devClickCount >= 3) {
+    devClickCount = 0;
+    showDevPopup();
+  }
+});
+</script>
+
+
+</body>
+</html>

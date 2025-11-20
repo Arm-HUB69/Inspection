@@ -1,0 +1,860 @@
+<!doctype html>
+
+
+<html lang="th">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Dashboard • Inspection</title>
+
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --navy:#08345f;
+      --muted:#6b7280;
+      --bg:#f4f7fb;
+      --card:#ffffff;
+      --accent-blending:#f59e0b;
+      --accent-packing:#3b82f6;
+      --accent-intake:#10b981;
+      --glass: rgba(255,255,255,0.8);
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      font-family:Inter, system-ui, Arial;
+      margin:0;
+      background:var(--bg);
+      color:#0f172a;
+    }
+
+    .db-header{
+      background:var(--navy);
+      color:#fff;
+      padding:12px 18px;
+      border-radius:12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:16px;
+    }
+    .db-header .brand{
+      font-weight:700;
+    }
+
+    .wrap{
+      max-width:1200px;
+      margin:20px auto;
+      padding:16px;
+    }
+
+    /* Filters */
+    .filters{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+      align-items:center;
+    }
+
+    input[type="date"],
+    select,
+    input[type="text"]{
+      padding:8px;
+      border-radius:8px;
+      border:1px solid #e6e9ef;
+      background:#fff;
+    }
+
+    .controls .btn{
+      background:#fff;
+      border:1px solid #e6e9ef;
+      padding:8px 10px;
+      border-radius:8px;
+      cursor:pointer;
+    }
+
+    .btn{
+      transition:0.15s ease-in-out;
+    }
+    .btn:hover{
+      background:#f1f5f9;
+      border-color:#cbd5e1;
+    }
+    .btn:active{
+      background:#e2e8f0;
+    }
+
+    /* KPI */
+    .card-row{
+      display:flex;
+      gap:12px;
+      margin-bottom:12px;
+      flex-wrap:wrap;
+    }
+    .kpi{
+      flex:1;
+      min-width:180px;
+      background:var(--card);
+      padding:14px;
+      border-radius:10px;
+      box-shadow:0 6px 18px rgba(2,6,23,0.06);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .kpi:hover{
+      transform: translateY(-3px);
+      box-shadow:0 10px 24px rgba(2,6,23,0.12);
+    }
+    .kpi .num{
+      font-size:22px;
+      font-weight:700;
+    }
+    .small{
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    /* Charts */
+    .charts{
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .panel{
+      background:var(--card);
+      padding:12px;
+      border-radius:10px;
+      box-shadow:0 6px 18px rgba(2,6,23,0.05);
+    }
+    .panel h3{
+      margin:0 0 8px 0;
+    }
+
+    canvas{
+      cursor:pointer;
+    }
+
+    /* Line table */
+    .line-table{
+      margin-top:12px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .line-card{
+      flex:1;
+      min-width:180px;
+      padding:12px;
+      background:#fff;
+      border-radius:8px;
+      box-shadow:0 6px 12px rgba(2,6,23,0.04);
+      cursor:pointer;
+      transition:0.15s ease;
+    }
+    .line-card:hover{
+      background:#f1f5f9;
+      transform:translateY(-3px);
+      box-shadow:0 8px 18px rgba(0,0,0,0.08);
+    }
+    .line-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+
+    /* Drilldown */
+    .results{
+      margin-top:16px;
+    }
+    .result-card{
+      background:#fff;
+      padding:12px;
+      border-radius:10px;
+      margin-bottom:10px;
+      box-shadow:0 6px 18px rgba(2,6,23,0.04);
+      transition:.15s ease;
+    }
+    .result-card:hover{
+      background:#f8fafc;
+    }
+    .result-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+    }
+    .spec-table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:8px;
+    }
+    .spec-table td{
+      padding:6px 8px;
+      border-bottom:1px dashed #eff2f7;
+    }
+    .spec-label{
+      width:160px;
+      font-weight:600;
+      color:#374151;
+    }
+
+    .photos{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .photos img{
+      width:140px;
+      height:90px;
+      object-fit:cover;
+      border-radius:6px;
+      cursor:zoom-in;
+      box-shadow:0 6px 18px rgba(2,6,23,0.04);
+      transition:.12s ease;
+    }
+    .photos img:hover{
+      transform:scale(1.05);
+      box-shadow:0 6px 18px rgba(0,0,0,0.25);
+    }
+
+    /* dept colors */
+    .dept-blending{border-left:6px solid var(--accent-blending)}
+    .dept-packing{border-left:6px solid var(--accent-packing)}
+    .dept-intake{border-left:6px solid var(--accent-intake)}
+
+    /* Responsive */
+    @media (max-width:980px){
+      .charts{
+        grid-template-columns:1fr;
+      }
+      .kpi{
+        min-width:48%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+ <header class="topbar">
+  <div class="topbar-left">
+    <span class="brand">PCG • Inspection</span>
+  </div>
+
+  <button id="menuToggle" class="menu-btn">☰</button>
+
+  <nav id="mobileMenu" class="nav-links">
+    <a href="index.html" class="nav-item">หน้าแรก</a>
+    <a href="dashboard_fixed.html" class="nav-item">Dashboard</a>
+    <a href="view-report.html" class="nav-item">View Report</a>
+    <a href="manage-photos.html" class="nav-item">Manage Photos</a>
+  </nav>
+</header>
+
+
+
+  <main class="wrap">
+    <div class="db-header">
+      <div class="brand">📊 Dashboard • Inspection</div>
+      <div style="color:#fff; opacity:0.9">ระบบรายงานความสะอาด</div>
+    </div>
+
+    <!-- filters -->
+    <div class="filters controls">
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn" id="resetBtn">Reset</button>
+      </div>
+
+      <label class="small">From <input type="date" id="fromDate"></label>
+      <label class="small">To <input type="date" id="toDate"></label>
+
+      <select id="deptFilter">
+        <option value="">ทุกแผนก</option>
+        <option>Blending</option>
+        <option>Packing</option>
+        <option>Intake</option>
+      </select>
+
+      <select id="lineFilter">
+        <option value="">ทุกไลน์</option>
+        <option>Line 2</option><option>Line 3</option><option>Line 4</option>
+        <option>Line 6</option><option>Line 7</option><option>Line 8</option>
+        <option>Line 9</option><option>Line 11</option><option>Line 12</option>
+      </select>
+
+      <select id="typeFilter">
+        <option value="">ทุกประเภท</option>
+        <option>IMS</option><option>Hopper</option>
+      </select>
+
+      <input type="text" id="ownerFilter" placeholder="คนทำ / หัวหน้า" style="min-width:160px"/>
+
+      <button id="applyFilters" class="btn">Apply</button>
+    </div>
+
+    <!-- KPI -->
+    <div class="card-row" id="kpiRow">
+      <div class="kpi">
+        <div class="small">งานทั้งหมด</div>
+        <div class="num" id="kpiTotal">-</div>
+        <div class="small">รวมงานในช่วงที่เลือก</div>
+      </div>
+
+      <div class="kpi">
+        <div class="small">เฉลี่ย / วัน (แผนก)</div>
+        <div class="num" id="kpiAvg">-</div>
+        <div class="small">ค่าเฉลี่ยงานต่อวัน (แผนก)</div>
+      </div>
+
+      <div class="kpi">
+        <div class="small">งานมากสุด</div>
+        <div class="num" id="kpiPeakDay">-</div>
+        <div class="small">วันที่มีงานมากที่สุด</div>
+      </div>
+
+      <div class="kpi">
+        <div class="small">คนทำงานมากสุด</div>
+        <div class="num" id="kpiTopPerson">-</div>
+        <div class="small">คนที่ส่งรายงานมากสุด</div>
+      </div>
+    </div>
+
+    <!-- charts -->
+    <div class="charts">
+      <div class="panel">
+        <h3>เทรนด์รายวัน</h3>
+        <div class="small" id="lineSummary"></div>
+        <canvas id="lineChart" height="220"></canvas>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="panel">
+          <h3>จำนวนงานตามแผนก</h3>
+          <div class="small" id="barSummary"></div>
+          <canvas id="barChart" height="180"></canvas>
+        </div>
+
+        <div class="panel">
+          <h3>สัดส่วนแผนก</h3>
+          <div class="small" id="donutSummary"></div>
+          <canvas id="donutChart" height="140"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- lines summary & drill -->
+    <div class="panel" id="linesPanel">
+      <h3>งานตามไลน์ (คลิกเพื่อดูรายละเอียด)</h3>
+      <div class="line-table" id="lineTable"></div>
+    </div>
+
+    <!-- drill down results -->
+    <div id="results" class="results"></div>
+  </main>
+
+<script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+window.showLoader = function (msg = "กำลังโหลด...") {
+    const l = document.getElementById("globalLoader");
+    l.querySelector(".loader-text").textContent = msg;
+    l.style.display = "flex";
+};
+
+window.hideLoader = function () {
+    document.getElementById("globalLoader").style.display = "none";
+};
+    // ---------- config ----------
+    const SUPABASE_URL = "https://meluzbswvmpfyxewlszc.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lbHV6YnN3dm1wZnl4ZXdsc3pjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwMzQ0MDgsImV4cCI6MjA3ODYxMDQwOH0.ZYx6H28gPVpFU-tbN4tTD5Dl__OdoM7QABcJp8Z7_8Q";
+
+    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const BUCKET = "inspection-photos";
+
+    // ---------- DOM ----------
+    const fromDate = document.getElementById("fromDate");
+    const toDate = document.getElementById("toDate");
+    const deptFilter = document.getElementById("deptFilter");
+    const lineFilter = document.getElementById("lineFilter");
+    const typeFilter = document.getElementById("typeFilter");
+    const ownerFilter = document.getElementById("ownerFilter");
+    const applyBtn = document.getElementById("applyFilters");
+    const resetBtn = document.getElementById("resetBtn");
+
+    const kpiTotal = document.getElementById("kpiTotal");
+    const kpiAvg = document.getElementById("kpiAvg");
+    const kpiPeakDay = document.getElementById("kpiPeakDay");
+    const kpiTopPerson = document.getElementById("kpiTopPerson");
+
+    const lineChartCtx = document.getElementById("lineChart").getContext("2d");
+    const barChartCtx = document.getElementById("barChart").getContext("2d");
+    const donutChartCtx = document.getElementById("donutChart").getContext("2d");
+
+    const lineSummary  = document.getElementById("lineSummary");
+    const barSummary   = document.getElementById("barSummary");
+    const donutSummary = document.getElementById("donutSummary");
+
+    const lineTable = document.getElementById("lineTable");
+    const results = document.getElementById("results");
+
+    let lineChart, barChart, donutChart;
+    let lastCachedData = [];
+
+    function fmtDate(d){
+      if (!d) return "-";
+      try { return new Date(d).toLocaleDateString("th-TH"); } catch(e){ return d; }
+    }
+    function fmtDateTime(d){
+      if (!d) return "-";
+      try { return new Date(d).toLocaleString("th-TH"); } catch(e){ return d; }
+    }
+
+    function extractWorkTime(r){
+      if (r.work_time) return r.work_time;
+      if (r.spec && r.spec.datetime) return r.spec.datetime;
+      if (r.photos && r.photos.length && r.photos[0].takenAt) return fmtDateTime(r.photos[0].takenAt);
+      if (r.created_at) return fmtDateTime(r.created_at);
+      return "-";
+    }
+
+    async function loadData(){
+      let { data, error } = await sb
+        .from("inspections")
+        .select("*")
+        .order("date", { ascending:false });
+
+      if (error){
+        console.error("fetch error", error);
+        return [];
+      }
+      return data || [];
+    }
+
+    function applyFiltersToData(data){
+      const fFrom = fromDate.value;
+      const fTo = toDate.value;
+      const dept = deptFilter.value;
+      const line = lineFilter.value;
+      const type = typeFilter.value;
+      const ownerQ = (ownerFilter.value || "").trim().toLowerCase();
+
+      return data.filter(r=>{
+        if (fFrom){
+          if (!r.date) return false;
+          if (r.date < fFrom) return false;
+        }
+        if (fTo){
+          if (!r.date) return false;
+          if (r.date > fTo) return false;
+        }
+
+        if (dept && (r.dept || "") !== dept) return false;
+
+        if (line){
+          const ln = (r.spec?.line || "").toString();
+          if (!ln || ln !== line) return false;
+        }
+
+        if (type){
+          const t = (r.spec?.type || r.spec?.mode || "").toString();
+          if (!t || t.toLowerCase() !== type.toLowerCase()) return false;
+        }
+
+        if (ownerQ){
+          const ok = ((r.owner||"") + " " + (r.supervisor||"")).toLowerCase().includes(ownerQ);
+          if (!ok) return false;
+        }
+
+        return true;
+      });
+    }
+
+    function aggregate(data){
+      const total = data.length;
+
+      const byDept = {};
+      const byDate = {};
+      const byLine = {};
+      const byPerson = {};
+
+      data.forEach(r=>{
+        const dept = r.dept || "Other";
+        byDept[dept] = (byDept[dept]||0) + 1;
+
+        const d = r.date || (r.created_at ? r.created_at.slice(0,10) : "unknown");
+        byDate[d] = (byDate[d]||0) + 1;
+
+        const ln = r.spec?.line || "Other";
+        byLine[ln] = (byLine[ln]||0) + 1;
+
+        const owner = r.owner || "Unknown";
+        byPerson[owner] = (byPerson[owner]||0) + 1;
+      });
+
+      const dates = Object.keys(byDate);
+      const days = dates.length || 1;
+      const avgPerDayPerDept = {};
+      Object.keys(byDept).forEach(d=> avgPerDayPerDept[d] = +(byDept[d] / days).toFixed(2));
+
+      let peakDay = "-", peakCount = 0;
+      Object.entries(byDate).forEach(([date,c])=> { if (c>peakCount){ peakCount=c; peakDay=date; } });
+
+      let topPerson = "-", topCount = 0;
+      Object.entries(byPerson).forEach(([p,c])=>{ if (c>topCount){ topCount=c; topPerson=p; } });
+
+      return { total, byDept, byDate, byLine, avgPerDayPerDept, peakDay, peakCount, topPerson, topCount, days };
+    }
+
+    function renderKPIs(agg){
+      kpiTotal.textContent = agg.total;
+      const avg = Object.values(agg.avgPerDayPerDept).reduce((a,b)=>a+b,0);
+      kpiAvg.textContent = (avg ? avg.toFixed(2) : "0");
+      kpiPeakDay.textContent = agg.peakDay === "-" ? "-" : `${agg.peakDay} (${agg.peakCount})`;
+      kpiTopPerson.textContent = agg.topPerson === "-" ? "-" : `${agg.topPerson} (${agg.topCount})`;
+    }
+
+    function renderSummaries(agg){
+      // เทรนด์รายวัน
+      if (lineSummary) {
+        if (!agg.total) {
+          lineSummary.textContent = "ยังไม่มีข้อมูลในช่วงที่เลือก";
+        } else {
+          const avg = agg.days ? (agg.total / agg.days) : 0;
+          let text = `รวม ${agg.total} งาน ใน ${agg.days} วัน เฉลี่ย ${avg.toFixed(2)} งาน/วัน`;
+          if (agg.peakDay !== "-") {
+            text += ` • วันงานมากสุด: ${agg.peakDay} (${agg.peakCount} งาน)`;
+          }
+          lineSummary.textContent = text;
+        }
+      }
+
+      // จำนวนงานตามแผนก
+      if (barSummary) {
+        const entries = Object.entries(agg.byDept);
+        if (!entries.length) {
+          barSummary.textContent = "ยังไม่มีข้อมูลในช่วงที่เลือก";
+        } else {
+          const sorted = [...entries].sort((a, b) => b[1] - a[1]);
+          const [topDept, topCount] = sorted[0];
+          const [lowDept, lowCount] = sorted[sorted.length - 1];
+          let text = `รวม ${agg.total} งาน • มากที่สุด: ${topDept} (${topCount} งาน)`;
+          if (sorted.length > 1) {
+            text += ` • น้อยที่สุด: ${lowDept} (${lowCount} งาน)`;
+          }
+          barSummary.textContent = text;
+        }
+      }
+
+      // สัดส่วนแผนก
+      if (donutSummary) {
+        const entries = Object.entries(agg.byDept);
+        if (!entries.length) {
+          donutSummary.textContent = "ยังไม่มีข้อมูลในช่วงที่เลือก";
+        } else {
+          const parts = entries.map(([dept, count]) => {
+            const pct = agg.total ? (count * 100) / agg.total : 0;
+            return `${dept} ${pct.toFixed(1)}% (${count})`;
+          });
+          donutSummary.textContent = parts.join(" • ");
+        }
+      }
+    }
+
+    function renderBar(byDept){
+      const labels = Object.keys(byDept);
+      const data = labels.map(l=>byDept[l]);
+
+      if (barChart) barChart.destroy();
+      barChart = new Chart(barChartCtx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label:'งาน', data, backgroundColor: labels.map(lbl=>{
+            if (lbl.toLowerCase()==="blending") return "rgba(245,158,11,0.85)";
+            if (lbl.toLowerCase()==="packing") return "rgba(59,130,246,0.85)";
+            if (lbl.toLowerCase()==="intake") return "rgba(16,185,129,0.85)";
+            return "rgba(100,116,139,0.8)";
+          }) }]},
+        options: {
+          onClick(evt, items){
+            if (!items.length) return;
+            const idx = items[0].index;
+            const dept = labels[idx];
+            drillBy({ dept });
+          },
+          plugins:{ legend:{ display:false } },
+          scales:{ y:{ beginAtZero:true } }
+        }
+      });
+    }
+
+    function renderDonut(byDept){
+      const labels = Object.keys(byDept);
+      const data = labels.map(l=>byDept[l]);
+
+      if (donutChart) donutChart.destroy();
+      donutChart = new Chart(donutChartCtx, {
+        type:'doughnut',
+        data:{ labels, datasets:[{ data, backgroundColor:labels.map(lbl=>{
+          if (lbl.toLowerCase()==="blending") return "rgba(245,158,11,0.9)";
+          if (lbl.toLowerCase()==="packing") return "rgba(59,130,246,0.9)";
+          if (lbl.toLowerCase()==="intake") return "rgba(16,185,129,0.9)";
+          return "#cbd5e1";
+        }) }]},
+        options:{
+          onClick(evt, items){
+            if (!items.length) return;
+            const idx = items[0].index;
+            const dept = labels[idx];
+            drillBy({ dept });
+          },
+          plugins:{ legend:{ position:'bottom' } }
+        }
+      });
+    }
+
+    function renderLine(byDate){
+      const dates = Object.keys(byDate).sort((a,b)=> a.localeCompare(b));
+      const data = dates.map(d=>byDate[d] || 0);
+      if (lineChart) lineChart.destroy();
+      lineChart = new Chart(lineChartCtx, {
+        type:'line',
+        data:{ labels:dates, datasets:[{ label:'งาน/วัน', data, borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,0.08)', fill:true, tension:0.25 }]},
+        options:{
+          onClick(evt, items){
+            if (!items.length) return;
+            const idx = items[0].index;
+            const date = dates[idx];
+            drillBy({ date });
+          },
+          plugins:{ legend:{ display:false } },
+          scales:{ y:{ beginAtZero:true } }
+        }
+      });
+    }
+
+    function renderLinesPanel(byLine, total){
+      lineTable.innerHTML = "";
+      const arr = Object.entries(byLine).sort((a,b)=> b[1]-a[1]);
+
+      arr.forEach(([line, cnt])=>{
+        const div = document.createElement("div");
+        div.className = "line-card";
+        const pct = total ? ((cnt * 100) / total).toFixed(1) : "0.0";
+
+        div.innerHTML = `
+          <div class="line-title">
+            <div><strong>${line}</strong></div>
+            <div class="small">${cnt} งาน (${pct}%)</div>
+          </div>
+        `;
+        div.addEventListener("click", ()=> drillBy({ line }));
+        lineTable.appendChild(div);
+      });
+    }
+
+    function renderResults(list, title){
+      results.innerHTML = "";
+      if (!list || !list.length) {
+        results.innerHTML = `<div class="small">ไม่พบรายการ</div>`;
+        return;
+      }
+      const header = document.createElement("div");
+      header.className = "small";
+      header.style.marginBottom = "8px";
+      header.textContent = title || `รายการ (${list.length})`;
+      results.appendChild(header);
+
+      list.forEach(r=>{
+        const card = document.createElement("div");
+        card.className = "result-card dept-" + (r.dept ? r.dept.toLowerCase() : "other");
+        const time = extractWorkTime(r);
+        const specRows = [];
+        specRows.push(["วันที่", r.date || "-"]);
+        specRows.push(["หน่วยงาน", r.dept || "-"]);
+
+        if ((r.dept || "").toLowerCase() === "blending"){
+          specRows.push(["ประเภท", r.spec?.type || "-"]);
+          if ((r.spec?.type || "").toLowerCase().includes("ims")) {
+            specRows.push(["Bin", r.spec?.bin || r.spec?.imsBin || "-"]);
+          } else {
+            specRows.push(["Area", r.spec?.area || "-"]);
+          }
+        } else if ((r.dept || "").toLowerCase() === "packing"){
+          specRows.push(["Line", r.spec?.line || "-"]);
+          specRows.push(["ระบบ", r.spec?.system || "-"]);
+        } else if ((r.dept || "").toLowerCase() === "intake"){
+          specRows.push(["โหมด", r.spec?.mode || "-"]);
+          specRows.push(["Line", r.spec?.line || "-"]);
+        }
+
+        specRows.push(["ผู้ทำ", r.owner || "-"]);
+        specRows.push(["หัวหน้า", r.supervisor || "-"]);
+
+        card.innerHTML = `
+          <div class="result-head">
+            <div style="font-weight:700">${r.spec?.type || r.spec?.line || r.dept || "รายงาน"}</div>
+            <div class="small">${time}</div>
+          </div>
+          <table class="spec-table">
+            ${specRows.map(s=>`<tr><td class="spec-label">${s[0]}</td><td>${s[1] ?? "-"}</td></tr>`).join("")}
+          </table>
+          <div class="photos">
+            ${(r.photos || []).map(p=>`<img loading="lazy" src="${p.url}" onclick="window.open('${p.url}', '_blank')">`).join("")}
+          </div>
+        `;
+        results.appendChild(card);
+      });
+
+      results.scrollIntoView({behavior:"smooth", block:"start"});
+    }
+
+    function drillBy(filter){
+      const filtered = lastCachedData.filter(r=>{
+        if (filter.dept) return (r.dept||"") === filter.dept;
+        if (filter.date) return (r.date||"") === filter.date;
+        if (filter.line) return (r.spec?.line||"") === filter.line;
+        return true;
+      });
+      renderResults(filtered, `Drill: ${Object.entries(filter).map(e=>e.join(": ")).join(" ")}`);
+    }
+
+    async function refresh(){
+      results.innerHTML = "";
+      const raw = await loadData();
+      lastCachedData = raw || [];
+
+      const filtered = applyFiltersToData(lastCachedData);
+      const agg = aggregate(filtered);
+
+      renderKPIs(agg);
+      renderSummaries(agg);
+      renderBar(agg.byDept);
+      renderDonut(agg.byDept);
+      renderLine(agg.byDate);
+      renderLinesPanel(agg.byLine, agg.total);
+    }
+
+    applyBtn.addEventListener("click", refresh);
+    resetBtn.addEventListener("click", ()=>{
+      fromDate.value = ""; toDate.value = ""; deptFilter.value = ""; lineFilter.value = ""; typeFilter.value = ""; ownerFilter.value = "";
+      refresh();
+    });
+
+    (function setDefaultDates(){
+      const now = new Date();
+      const prior = new Date(); prior.setDate(now.getDate()-14);
+      fromDate.value = prior.toISOString().slice(0,10);
+      toDate.value = now.toISOString().slice(0,10);
+    })();
+
+    refresh();
+
+    window.DashboardDrill = drillBy;
+  </script>
+  <!-- GLOBAL LOADER -->
+<div id="globalLoader" class="loader-overlay">
+  <div class="loader"></div>
+  <div class="loader-text">กำลังโหลด...</div>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const toggle = document.getElementById("menuToggle");
+  const menu = document.getElementById("mobileMenu");
+
+  if (!toggle || !menu) return;
+
+  toggle.addEventListener("click", () => {
+    menu.classList.toggle("show");
+  });
+
+  menu.querySelectorAll("a").forEach(a => {
+    a.addEventListener("click", () => {
+      menu.classList.remove("show");
+    });
+  });
+});
+</script>
+<!-- Developer Credit Popup -->
+<div id="devCreditOverlay"
+     style="
+       display:none; position:fixed; inset:0;
+       background:rgba(0,0,0,0.65); backdrop-filter:blur(4px);
+       justify-content:center; align-items:center; z-index:9999;
+     ">
+  <pre id="devAscii"
+       style="color:white; font-size:16px; text-align:center;
+              line-height:1.2; white-space:pre; padding:20px;">
+  </pre>
+</div>
+
+<script>
+// ----------- Settings -------------
+const devAudio = new Audio("sounds/beer_open.mp3");  // เสียงเปิดเบียร์
+let devClickCount = 0;
+let asciiIndex = 0;
+
+// ----------- ASCII Animation Frames -----------
+const asciiFrames = [
+`    /\\_/\\
+   ( ≖‿≖ )
+   (  ~  )
+    \\   /
+     |_|     🍺 ACCESS GRANTED
+DEV BY ARM`,
+
+`    /\\_/\\
+   ( •‿• )
+   (  ~  )
+    \\   /
+     |_|     🍺 ACCESS GRANTED
+DEV BY ARM`
+];
+
+// ----------- Show Popup -----------
+function showDevPopup() {
+  const overlay = document.getElementById("devCreditOverlay");
+  const box = document.getElementById("devAscii");
+
+  // รีเซ็ตเสียงทุกครั้ง
+  devAudio.currentTime = 0;
+  devAudio.play().catch(()=>{});
+
+  overlay.style.display = "flex";
+
+  // กระพริบ frame แมว
+  asciiIndex = 0;
+  const anim = setInterval(()=>{
+     box.textContent = asciiFrames[asciiIndex];
+     asciiIndex = (asciiIndex + 1) % asciiFrames.length;
+  }, 220);
+
+  // ซ่อนหลัง 5 วินาที
+  setTimeout(()=>{
+    clearInterval(anim);
+    overlay.style.display = "none";
+  }, 5000);
+}
+
+// ----------- Trigger เมื่อคลิกชื่อแบรนด์ 3 ครั้ง -----------
+document.querySelector(".brand")?.addEventListener("click", () => {
+  devClickCount++;
+
+  if (devClickCount >= 3) {
+    devClickCount = 0;
+    showDevPopup();
+  }
+});
+</script>
+
+
+</body>
+</html>
