@@ -160,12 +160,18 @@ async function load(filter=""){
 
   <div class="task-body">
     ${makeSpecTable(r)}
-    <div class="photos">
-      ${r.photos?.map(p=>`
-        <img src="${p.url}" onclick="window.open('${p.url}')">
-      `).join("")}
-    </div>
-  </div>
+   <div class="photos">
+  ${r.photos?.map(p=>`
+    <img 
+      loading="lazy"
+      src="${p.url}?width=320" 
+      data-full="${p.url}"
+      style="background:#f0f0f0; min-height:120px; object-fit:cover; border-radius:6px;"
+      onclick="window.open(this.dataset.full, '_blank')"
+    >
+  `).join("")}
+</div>
+
 `;
 
 
@@ -292,5 +298,6 @@ if (pdfBtn) {
     }
   });
 }
+
 
 
